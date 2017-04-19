@@ -36,10 +36,10 @@ Juice利用Mesos集群空闲的计算能力，负责统一的接口返回和任�
 * 安装mysql5.6以上版本
   
 ~~~~
-    创建mysql数据库juice,schema为juice。
-    执行/script/juice_2017-V1.0-OPEN.sql创建2张表juice_framework、juice_task。
-    修改以下内容：
-    1.juice-jooq/pom.xml：
+    1.创建mysql数据库juice,schema为juice
+    
+    2.执行/script/juice_2017-V1.0-OPEN.sql创建2张表juice_framework、juice_task。
+    3.修改文件juice-jooq/pom.xml：
     <configuration>
       <jdbc>
         <driver>com.mysql.jdbc.Driver</driver>
@@ -67,21 +67,23 @@ Juice利用Mesos集群空闲的计算能力，负责统一的接口返回和任�
       </generator>
     </configuration>
     
-    2.juice-rest/src/main/resources/config/application-dev.properties
+    修改以下内容，将4，5中内容修改为数据库安装时的配置信息。
+    4.juice-rest/src/main/resources/config/application-dev.properties
     spring.datasource.url=jdbc:mysql://your_ip:port/juice?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false
     spring.datasource.username=user
     spring.datasource.password=password
-    3.juice-service/src/main/resources/application-dev.properties
+    
+    5.juice-service/src/main/resources/application-dev.properties
     db.url=jdbc:mysql://your_ip:port/juice?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false
     db.user=user
     db.password=password
-    将以上内容修改为数据库安装时的配置信息。
+    
 ~~~~
 
 * 安装Redis3.0以上版本
 
 ~~~~
-    修改以下内容：
+    修改以下内容，将1，2内容修改为Redis安装时的配置信息。
     1.juice-rest/src/main/resources/config/application-dev.properties
     spring.redis.host=redis_ip
     spring.redis.port=redis_port
@@ -90,11 +92,10 @@ Juice利用Mesos集群空闲的计算能力，负责统一的接口返回和任�
     redis.host=redis_ip
     redis.port=redis_port
     redis.password=
-    将以上内容修改为Redis安装时的配置信息。
 ~~~~
 
 ~~~~
-在项目根目录执行mvn clean install编译项目，编译后产生juice-service和juice-rest2个jar包。
+在项目根目录执行mvn clean install -U编译项目，编译后产生juice-service和juice-rest2个jar包。
 项目启动:
 * java -Dsystem.environment=dev -jar juice-service.jar
 * java -Dspring.profiles.active=dev -jar juice-rest.jar
