@@ -207,21 +207,35 @@
         </dependencies>
     </dependencyManagement>
 
-    <repositories>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
+     <repositories>
         <repository>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
             <id>public</id>
             <name>Public Repositories</name>
-            <url>http://nexus.yeshj.com/nexus/content/groups/public/</url>
+            <url>http://123.59.46.189:18081/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>oschina Releases</id>
+            <name>oschina Releases</name>
+            <url>http://maven.oschina.net/content/groups/public</url>
+        </repository>
+        <repository>
+            <id>springsource-repo</id>
+            <name>SpringSource Repository</name>
+            <url>http://repo.spring.io/release/</url>
+        </repository>
+        <repository>
+            <id>springsource-repo-snapshot</id>
+            <name>SpringSource Repository</name>
+            <url>http://repo.spring.io/snapshot/</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <name>Maven Repository Switchboard</name>
+            <layout>default</layout>
+            <url>http://repo.maven.apache.org/maven2</url>
         </repository>
     </repositories>
 
@@ -229,7 +243,7 @@
         <pluginRepository>
             <id>nexus</id>
             <name>nexus</name>
-            <url>http://nexus.yeshj.com/nexus/content/groups/public/</url>
+            <url>http://123.59.46.189:18081/nexus/content/groups/public/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -237,16 +251,26 @@
                 <enabled>true</enabled>
             </snapshots>
         </pluginRepository>
+        <pluginRepository>
+            <id>oschina Releases</id>
+            <name>oschina Releases</name>
+            <url>http://maven.oschina.net/content/groups/public</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>maven2-repo</id>
+            <name>maven2 Repository</name>
+            <url>http://repo1.maven.org/maven2/</url>
+        </pluginRepository>
     </pluginRepositories>
 
     <distributionManagement>
         <repository>
             <id>releases</id>
-            <url>http://nexus.yeshj.com/nexus/content/repositories/releases</url>
+            <url>http://123.59.46.189:18081/nexus/content/repositories/releases</url>
         </repository>
         <snapshotRepository>
             <id>snapshots</id>
-            <url>http://nexus.yeshj.com/nexus/content/repositories/snapshots</url>
+            <url>http://123.59.46.189:18081/nexus/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 </project>
