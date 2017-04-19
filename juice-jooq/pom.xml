@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>juice</artifactId>
+        <groupId>com.hujiang</groupId>
+        <version>1.0-OPEN</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>juice-jooq</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-meta</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <version>${jooq.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-mysql</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <jdbc>
+                                <driver>com.mysql.jdbc.Driver</driver>
+                                <url>jdbc:mysql://your ip:your port/juice</url> <!-- ip & port & database name -->
+                                <user>your username</user> <!-- username of database -->
+                                <password>your password</password> <!-- password of database -->
+                            </jdbc>
+                            <generator>
+                                <database>
+                                    <name>org.jooq.util.mysql.MySQLDatabase</name>
+                                    <includes>juice_task|juice_framework</includes>
+                                    <inputSchema>juice</inputSchema> <!-- schema name -->
+                                    <outputSchema></outputSchema>
+                                    <outputSchemaToDefault>true</outputSchemaToDefault>
+                                </database>
+                                <generate>
+                                    <pojos>true</pojos>
+                                    <!--<springAnnotations>true</springAnnotations>-->
+                                    <!--<validationAnnotations>true</validationAnnotations>-->
+                                </generate>
+                                <target>
+                                    <packageName>com.hujiang.jooq.juice</packageName>
+                                    <directory>target/generated-sources/jooq-mysql</directory>
+                                </target>
+                            </generator>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

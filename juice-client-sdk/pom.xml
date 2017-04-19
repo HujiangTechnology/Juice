@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>juice</artifactId>
+        <groupId>com.hujiang</groupId>
+        <version>1.0-OPEN</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>juice-client-sdk</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hujiang</groupId>
+            <artifactId>juice-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.hujiang</groupId>
+            <artifactId>juice-jooq</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <finalName>juice-common</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
