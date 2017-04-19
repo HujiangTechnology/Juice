@@ -36,16 +36,37 @@ Juice利用Mesos集群空闲的计算能力，负责统一的接口返回和任�
 * 安装mysql5.6以上版本
   
 ~~~~
-    创建mysql数据juice,schema为juice。
+    创建mysql数据库juice,schema为juice。
     执行/script/juice_2017-V1.0-OPEN.sql创建2张表juice_framework、juice_task。
     修改以下内容：
     1.juice-jooq/pom.xml：
-    <jdbc>
+    <configuration>
+      <jdbc>
         <driver>com.mysql.jdbc.Driver</driver>
-        <url>jdbc:mysql://your_ip:port/juice</url> <!-- ip & port & database name -->
-        <user>user</user> <!-- username of database -->
-        <password>password</password> <!-- password of database -->
-    </jdbc>
+        <url>jdbc:mysql://your_ip:your_port/juice</url> <!-- ip & port & database name -->
+        <user>your username</user> <!-- username of database -->
+        <password>your password</password> <!-- password of database -->
+      </jdbc>
+      <generator>
+        <database>
+          <name>org.jooq.util.mysql.MySQLDatabase</name>
+          <includes>juice_task|juice_framework</includes>
+          <inputSchema>juice</inputSchema> <!-- schema name -->
+          <outputSchema></outputSchema>
+          <outputSchemaToDefault>true</outputSchemaToDefault>
+        </database>
+        <generate>
+          <pojos>true</pojos>
+          <!--<springAnnotations>true</springAnnotations>-->
+          <!--<validationAnnotations>true</validationAnnotations>-->
+        </generate>
+        <target>
+          <packageName>com.hujiang.jooq.juice</packageName>
+          <directory>target/generated-sources/jooq-mysql</directory>
+        </target>
+      </generator>
+    </configuration>
+    
     2.juice-rest/src/main/resources/config/application-dev.properties
     spring.datasource.url=jdbc:mysql://your_ip:port/juice?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false
     spring.datasource.username=user
