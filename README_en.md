@@ -42,25 +42,45 @@ Juice uses Mesos clustered idle computing capabilities, responsible for a unifie
 * Install mysql5.6 or later
 
 ~~~~
-    Create mysql database juice and schema as juice.
-    Run /script/juice_2017-V1.0-OPEN.sql to create tables juice_framework and juice_task.
+    1.Create mysql database juice and schema as juice.
+    
+    2.Run /script/juice_2017-V1.0-OPEN.sql to create tables juice_framework and juice_task.
 
-    Modify the configuration:
-
-    1.juice-jooq/pom.xml：
-    <jdbc>
+    3.Modify the configuration, juice-jooq/pom.xml：
+    <configuration>
+      <jdbc>
         <driver>com.mysql.jdbc.Driver</driver>
-        <url>jdbc:mysql://your_ip:port/juice</url> <!-- ip & port & database name -->
-        <user>user</user> <!-- username of database -->
-        <password>password</password> <!-- password of database -->
-    </jdbc>
+        <url>jdbc:mysql://your_ip:your_port/juice</url> <!-- ip & port & database name -->
+        <user>your username</user> <!-- username of database -->
+        <password>your password</password> <!-- password of database -->
+      </jdbc>
+      <generator>
+        <database>
+          <name>org.jooq.util.mysql.MySQLDatabase</name>
+          <includes>juice_task|juice_framework</includes>
+          <inputSchema>juice</inputSchema> <!-- schema name -->
+          <outputSchema></outputSchema>
+          <outputSchemaToDefault>true</outputSchemaToDefault>
+        </database>
+        <generate>
+          <pojos>true</pojos>
+          <!--<springAnnotations>true</springAnnotations>-->
+          <!--<validationAnnotations>true</validationAnnotations>-->
+        </generate>
+        <target>
+          <packageName>com.hujiang.jooq.juice</packageName>
+          <directory>target/generated-sources/jooq-mysql</directory>
+        </target>
+      </generator>
+    </configuration>
 
-    2.juice-rest/src/main/resources/config/application-dev.properties
+    Modify 4,5 the configuration properties file to your database settings:
+    4.juice-rest/src/main/resources/config/application-dev.properties
         spring.datasource.url=jdbc:mysql://your_ip:port/juice?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false
         spring.datasource.username=user
         spring.datasource.password=password
 
-    3.juice-service/src/main/resources/application-dev.properties
+    5.juice-service/src/main/resources/application-dev.properties
         db.url=jdbc:mysql://your_ip:port/juice?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false
         db.user=user
         db.password=password
@@ -70,8 +90,7 @@ Juice uses Mesos clustered idle computing capabilities, responsible for a unifie
 * Install Redis3.0 or later
 
 ~~~~
-    Modify the configuration:
-
+    Modify 1,2 the configuration properties file to your redis settings:
     1.juice-rest/src/main/resources/config/application-dev.properties
         spring.redis.host=redis_ip
         spring.redis.port=redis_port
