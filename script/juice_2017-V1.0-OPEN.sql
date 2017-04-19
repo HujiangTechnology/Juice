@@ -5,7 +5,7 @@
 # http://www.sequelpro.com/
 # https://github.com/sequelpro/sequelpro
 #
-# Host: 192.168.36.202 (MySQL 5.7.16)
+# Host: 192.168.1.1 (MySQL 5.7.16)
 # Database: juice
 # Generation Time: 2017-03-28 04:40:36 +0000
 # ************************************************************
