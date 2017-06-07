@@ -33,7 +33,7 @@ public class CuratorUtils {
 
 
     public String generatePath() throws Exception {
-        return client.getChildren().forPath(MESOS_ROOT_PATH).stream().filter(ch -> ch.startsWith(PATH_NAME)).sorted().findFirst().map(this::getFullPath).orElse(null);
+        return client.getChildren().forPath(MESOS_ROOT_PATH).stream().filter(ch -> ch.startsWith(PATH_NAME)).sorted().findFirst().map(this::getFullPath).orElse("");
     }
 
     private String getFullPath(String pathName) {
@@ -105,12 +105,16 @@ public class CuratorUtils {
     }
 
     private void removed(String changedPath) {
-        if (StringUtils.isNotBlank(changedPath) && changedPath.equals(path)) {
+        if (StringUtils.isNotBlank(changedPath) && path.equals(changedPath)) {
             try {
                 path = generatePath();
-                log.warn("path removed : " + path);
+                if (StringUtils.isNotBlank(path)) {
+                    log.warn("path changed to  : " + path);
+                    setHost();
+                }
             } catch (Exception e) {
-                path = null;
+                path = "";
+                log.error("path removed : " + changedPath);
                 log.error(e.getMessage());
             }
         }
@@ -119,13 +123,6 @@ public class CuratorUtils {
     private void updated(String changedPath) {
         try {
             if(StringUtils.isBlank(path) || path.equals(changedPath)) {
-                if(StringUtils.isBlank(path)) {
-                    String tmpPath = generatePath();
-                    if (StringUtils.isNotBlank(tmpPath)) {
-                        path = tmpPath;
-                    }
-                }
-
                 setHost();
             }
         } catch (Exception e) {
@@ -138,9 +135,9 @@ public class CuratorUtils {
         try {
             if (StringUtils.isNotBlank(path)) {
                 String connectString = getConnectString();
-                if (StringUtils.isNotBlank(connectString) && (null == host.getHost() || !host.getHost().equals(connectString))) {
+                if (StringUtils.isNotBlank(connectString) && (StringUtils.isBlank(host.getHost()) || !host.getHost().equals(connectString))) {
                     host.setHost(connectString);
-                    log.info("path update, update mesos host to :" + host.getHost());
+                    log.info("path update, update mesos host to : " + host.getHost());
                 }
             }
         } catch (Exception e) {
