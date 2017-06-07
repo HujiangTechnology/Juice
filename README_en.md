@@ -129,3 +129,7 @@ Juice is best suited for running Docker tasks, and it is common practice to put 
 
 Juice will automatically find a suitable Agent to perform this task, the caller does not have to care about which host to perform on, but only need to care about whether the task can be successful.
 ~~~~
+
+
+## Connected and join discuss###
+QQ group:554271921
