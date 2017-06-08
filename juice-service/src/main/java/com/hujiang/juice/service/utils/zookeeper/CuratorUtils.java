@@ -95,9 +95,10 @@ public class CuratorUtils {
                 String tmpPath = generatePath();
                 if (StringUtils.isNotBlank(tmpPath)) {
                     path = tmpPath;
+                    log.info("add path,now current active path is : " + path);
+                    setHost();
+
                 }
-                setHost();
-                log.info("path changed to : " + path);
             }
         } catch (Exception e) {
             log.error(e.getMessage());
