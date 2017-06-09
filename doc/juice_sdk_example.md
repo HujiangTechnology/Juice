@@ -11,7 +11,6 @@
 提交一个Docker任务
 @Test
 public void submitsDocker() {
-    string tenantId = "ocs_test";
     Submits submitsDocker = Submits.create()
             .setDockerImage("dockerhub.XXXX.com/demo-slice")
             .setTaskName("demo-slice")
@@ -33,7 +32,6 @@ public void submitsDocker() {
 提交一个Commands任务
 @Test
 public void submitsCommands() {
-    string tenantId = "ocs_test";
     Submits submitsCommands = Submits.create()
             .setCommands("/home/app/commands-test/entrypoint.sh")
             .setTaskName("test-commands")
@@ -57,7 +55,6 @@ public void submitsCommands() {
 查询任务状态
 @Test
 public void querys() {
-    string tenantId = "ocs_test";
     Querys querys = Querys.create()
                 .addTask(832419514512333559L);
     List<Task> tasks = JuiceClient.create(“http://your-juice-rest-host", "your-system-id-in-string")
@@ -75,7 +72,6 @@ public void querys() {
 终止一个正在执行的任务
 @Test
 public void kills() {
-    string tenantId = "ocs_test";
     Kills kills = Kills.create()
             .setTaskId(832419514512333759L);
     TaskKill killed = JuiceClient.create(“http://your-juice-rest-host", "your-system-id-in-string")
@@ -91,7 +87,6 @@ public void kills() {
 同步一个任务的状态
 @Test
 public void reconciles() {
-    string tenantId = "ocs_test";
     Reconciles reconciles = Reconciles.create()
                     .addTask(832419514512333759L);
  
