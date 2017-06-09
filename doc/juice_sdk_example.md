@@ -19,7 +19,7 @@ public void submitsDocker() {
             .addEnv("environment", "dev")
             .addResources(2.0, 2048.0);
  
-    Long taskId = JuiceClient.create(juiceRequestUrl, tenantId)
+    Long taskId = JuiceClient.create(“http://your-juice-rest-host", "your-system-id-in-string")
             .setOperations(submitsDocker)
             .handle();
  
@@ -42,7 +42,7 @@ public void submitsCommands() {
             .addConstraints(Constraints.FIELD.HOSTNAME, "192.168.0.3")           //   当选用RACK_ID模式时,juice会从符合该rack_id的Agent中选取一个执行任务，关于rack_id需要在mesos上设置attribute.
             .addResources(0.5, 256.0);
  
-    Long taskId = JuiceClient.create(juiceRequestUrl, tenantId)
+    Long taskId = JuiceClient.create(“http://your-juice-rest-host", "your-system-id-in-string")
             .setOperations(submitsCommands)
             .handle();
  
@@ -60,7 +60,7 @@ public void querys() {
     string tenantId = "ocs_test";
     Querys querys = Querys.create()
                 .addTask(832419514512333559L);
-    List<Task> tasks = JuiceClient.create(juiceRequestUrl, tenantId)
+    List<Task> tasks = JuiceClient.create(“http://your-juice-rest-host", "your-system-id-in-string")
                 .setOperations(querys)
                 .handle();
      
@@ -78,7 +78,7 @@ public void kills() {
     string tenantId = "ocs_test";
     Kills kills = Kills.create()
             .setTaskId(832419514512333759L);
-    TaskKill killed = JuiceClient.create(juiceRequestUrl, ocs_test)
+    TaskKill killed = JuiceClient.create(“http://your-juice-rest-host", "your-system-id-in-string")
                 .setOperations(kills)
                 .handle();
     if(null != killed) {
@@ -95,7 +95,7 @@ public void reconciles() {
     Reconciles reconciles = Reconciles.create()
                     .addTask(832419514512333759L);
  
-    TaskReconcile taskReconcile = JuiceClient.create(juiceRequestUrl, tenantId)
+    TaskReconcile taskReconcile = JuiceClient.create(“http://your-juice-rest-host", "your-system-id-in-string")
                     .setOperations(reconciles)
                     .handle();
  
