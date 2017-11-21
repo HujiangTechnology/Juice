@@ -55,7 +55,7 @@ public class Reconciles extends Operations{
 
     @Override
     @SuppressWarnings("unchecked")
-    public TaskReconcile handle(String requestUrl, String tenantId) {
+    public TaskReconcile handle(String requestUrl) {
 
         Map<String, String> map = getTaskIdsStr(taskIdList);
 
@@ -64,7 +64,6 @@ public class Reconciles extends Operations{
             String url = requestUrl + URL_RECONCILE;
             result = Restty.create(url, map)
                     .addMediaType(Restty.jsonBody())
-                    .addHeader(TENANT_ID_HEAD, tenantId)
                     .post(new ParameterTypeReference<Result<TaskReconcile>>() {
                     });
         } catch (IOException e) {

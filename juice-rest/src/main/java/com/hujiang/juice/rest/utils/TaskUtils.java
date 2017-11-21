@@ -40,7 +40,7 @@ public class TaskUtils {
             requestTask.getResources().checkSet();
         }
 
-        checkEnv(requestTask);
+        checkEnvs(requestTask);
         checkArgs(requestTask);
 
         checkConstraints(requestTask.getConstraints());
@@ -119,10 +119,10 @@ public class TaskUtils {
         }
     }
 
-    private static void checkEnv(SubmitTask requestTask) {
-        Command.Environment env = requestTask.getEnv();
-        if(env != null) {
-            if(StringUtils.isBlank(env.getName()) || StringUtils.isBlank(env.getValue())) {
+    private static void checkEnvs(SubmitTask requestTask) {
+        List<Command.Environment> envs = requestTask.getEnvs();
+        if(envs != null && envs.isEmpty()) {
+            if(envs.stream().anyMatch(env -> StringUtils.isBlank(env.getName()) || StringUtils.isBlank(env.getValue()))) {
                 throw new RestException(OBJECT_INIT_ERROR.getCode(), "env format error, please check env format in requestBody!");
             }
         }

@@ -19,8 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static com.hujiang.juice.common.config.COMMON.CPUS;
-import static com.hujiang.juice.common.config.COMMON.MEMS;
+import static com.hujiang.juice.common.config.COMMON.*;
 import static com.hujiang.juice.common.utils.CommonUtils.currentTimeSeconds;
 import static com.hujiang.juice.service.config.JUICE.*;
 import static java.util.stream.Collectors.groupingBy;
@@ -71,7 +70,7 @@ public class SchedulerService {
             } catch (DataBaseException ex) {
                 log.error("save frameworkId error due to db operation error, frameworkId : " + frameworkID);
             }
-            log.info("[subscribed success] id: " + subscribed.getFrameworkId() + ", heartbeat : " + subscribed.getHeartbeatIntervalSeconds());
+            log.info("[subscribed success] id: " + subscribed.getFrameworkId().getValue() + ", heartbeat : " + subscribed.getHeartbeatIntervalSeconds());
         }
     }
 
@@ -94,12 +93,7 @@ public class SchedulerService {
     }
 
     public static void handleOffers(Map<Long, String> killMap, Support support, Offer offer, Set<String> attributes, List<OfferID> declines, List<TaskInfo> tasks) {
-        final String desiredRole = support.getResourceRole();
-        final AgentID agentId = offer.getAgentId();
         final OfferID offerId = offer.getId();
-
-        Map<String, Set<String>> facts = generatorFacts(offer, attributes);
-
         final Map<String, List<Resource>> resources = offer.getResourcesList()
                 .stream()
                 .collect(groupingBy(Resource::getName));
@@ -111,6 +105,15 @@ public class SchedulerService {
                 && null != memList && !memList.isEmpty()
                 && cpuList.size() == memList.size()) {
 
+            final String desiredRole = support.getResourceRole();
+            final AgentID agentId = offer.getAgentId();
+
+            Address address = null;
+            if(null != offer.getUrl()) {
+                address = offer.getUrl().getAddress();
+            }
+            Map<String, Set<String>> facts = generatorFacts(offer, attributes);
+
             for (int i = 0; i < cpuList.size(); i++) {
                 final Resource cpus = cpuList.get(i);
                 final Resource mem = memList.get(i);
@@ -118,7 +121,7 @@ public class SchedulerService {
                 boolean isExhausted = false;
                 if (desiredRole.equals(cpus.getRole()) && desiredRole.equals(mem.getRole())) {
                     ResourcesUtils resourcesUtils = new ResourcesUtils(cpus.getScalar().getValue(), mem.getScalar().getValue(), RESOURCES_USE_THRESHOLD, desiredRole);
-                    isExhausted = allocatingUntilExhausted(killMap, agentId, facts, resourcesUtils, tasks);
+                    isExhausted = allocatingUntilExhausted(killMap, agentId, facts, resourcesUtils, tasks, address);
                 }
                 if (isExhausted) {
                     break;
@@ -193,20 +196,7 @@ public class SchedulerService {
                 result = TaskResult.Result.UNKNOWN;
                 break;
         }
-        if (null != result) {
-            TaskResult taskResult = new TaskResult(taskId, result, message);
-            try {
-                cacheUtils.pushToQueue(TASK_RESULT_QUEUE, gson.toJson(taskResult));
-                log.debug("update --> task result, taskResult [taskId : "
-                        + taskResult.getTaskId()
-                        + " status : "
-                        + taskResult.getResult().name()
-                        + " ]");
-            } catch (CacheException e) {
-                AuxiliaryService.getTaskErrors().push(taskResult);
-                log.error("cache not available, push task result error, { taskId : " + taskId + " }");
-            }
-        }
+        AuxiliaryService.update(result, taskStatus.getData().toStringUtf8(), taskId, message);
     }
 
     public static void error(Event event) {
@@ -241,15 +231,15 @@ public class SchedulerService {
         return facts;
     }
 
-    private static boolean allocatingUntilExhausted(Map<Long, String> killMap, Protos.AgentID agentId, Map<String, Set<String>> facts, ResourcesUtils hardware, List<Protos.TaskInfo> tasks) {
+    private static boolean allocatingUntilExhausted(Map<Long, String> killMap, Protos.AgentID agentId, Map<String, Set<String>> facts, ResourcesUtils hardware, List<Protos.TaskInfo> tasks, Address address) {
 
         long cacheTries = CACHE_TRIES;
         //  when either cpu or memory reach the picket line, will stop allocation task
         while (hardware.isAvailable()) {
             if (cacheTries > 0) {
-                cacheTries = taskOrResourceExhausted(killMap, agentId, facts, hardware, tasks, true) ? 0 : cacheTries - 1;
+                cacheTries = taskOrResourceExhausted(killMap, agentId, facts, hardware, tasks, true, address) ? 0 : cacheTries - 1;
             } else {
-                if (taskOrResourceExhausted(killMap, agentId, facts, hardware, tasks, false)) {
+                if (taskOrResourceExhausted(killMap, agentId, facts, hardware, tasks, false, address)) {
                     return true;
                 }
             }
@@ -257,7 +247,7 @@ public class SchedulerService {
         return false;
     }
 
-    private static boolean taskOrResourceExhausted(@NotNull Map<Long, String> killMap, Protos.AgentID agentId, Map<String, Set<String>> facts, ResourcesUtils hardware, List<Protos.TaskInfo> tasks, boolean isRetryTask) {
+    private static boolean taskOrResourceExhausted(@NotNull Map<Long, String> killMap, Protos.AgentID agentId, Map<String, Set<String>> facts, ResourcesUtils hardware, List<Protos.TaskInfo> tasks, boolean isRetryTask,  Address address) {
 
         //  is task in cache exhausted ?
         String tskStr = isRetryTask ? cacheUtils.popFromQueue(TASK_RETRY_QUEUE) : cacheUtils.popFromQueue(TASK_QUEUE);
@@ -275,7 +265,7 @@ public class SchedulerService {
         } else {
             if (hardware.allocating(task.getResources())) {
                 //  accept task
-                addTask(killMap, agentId, task, tasks, isRetryTask);
+                addTask(killMap, agentId, task, tasks, isRetryTask, address);
             } else {
                 //  resources is exhausted
                 task.getExpire().incrementResourceLack();
@@ -294,12 +284,12 @@ public class SchedulerService {
         return constraints.isAvailable(facts);
     }
 
-    private static void addTask(@NotNull Map<Long, String> killMap, @NotNull Protos.AgentID agentId, @NotNull Task task, @NotNull List<Protos.TaskInfo> tasks, boolean isRetryTask) {
+    private static void addTask(@NotNull Map<Long, String> killMap, @NotNull Protos.AgentID agentId, @NotNull Task task, @NotNull List<Protos.TaskInfo> tasks, boolean isRetryTask, Address address) {
         boolean isToKilled = false;
         try {
             isToKilled = killMap.containsKey(task.getTaskId());
             //update db set taskAgentRel
-            AuxiliaryService.updateTask(killMap, task.getTaskId(), agentId.getValue(), isToKilled);
+            AuxiliaryService.updateTask(killMap, task.getTaskId(), agentId.getValue(), isToKilled, address);
             if(!isToKilled){
                 tasks.add(task.getTask(agentId));
                 log.info("resourceAllocation --> add task : " + task.getTaskId());
@@ -312,7 +302,7 @@ public class SchedulerService {
     }
 
     private static void taskReserve(Task task, boolean isRetryTask) {
-        if (isRetryTask) {
+        if (isRetryTask && task.getExpire().getFirstReservedTimes() > 0) {
             if (currentTimeSeconds() - task.getExpire().getFirstReservedTimes() > TASK_RETRY_EXPIRE_TIME) {
                 addToTaskErrors(task.getTaskId(), TaskResult.Result.EXPIRED, "task keep in queue's time > " + TASK_RETRY_EXPIRE_TIME + " seconds");
             } else if (task.getExpire().getOfferLack() > MAX_RESERVED) {
@@ -330,7 +320,11 @@ public class SchedulerService {
 
     private static void pushRetryTask(Task task) {
         try {
-            cacheUtils.pushToQueue(TASK_RETRY_QUEUE, gson.toJson(task));
+            if(task.getPriority() == PRIORITY && (task.getExpire().getOfferLack() < PRIORITY_LACK && task.getExpire().getResourceLack() < PRIORITY_LACK)) {
+                cacheUtils.rpushToQueue(TASK_RETRY_QUEUE, gson.toJson(task));
+            } else {
+                cacheUtils.pushToQueue(TASK_RETRY_QUEUE, gson.toJson(task));
+            }
         } catch (CacheException e) {
             log.error("cache exception, push task to retry-queue error, { taskId : " + task.getTaskId() + " }");
             addToTaskErrors(task.getTaskId(), TaskResult.Result.ERROR, "cache exception, push task to retry-queue error");

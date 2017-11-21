@@ -209,7 +209,6 @@ public class SchedulerDriver {
                 break;
             case OFFERS:
                 try {
-                    long start = System.currentTimeMillis();
                     event.getOffers().getOffersList().stream()
                             .filter(of -> {
                                 if (SchedulerService.filterAndAddAttrSys(of, attrMap)) {
@@ -244,8 +243,6 @@ public class SchedulerDriver {
                     if (declines.size() > 0) {
                         AuxiliaryService.declineOffer(protocol, streamId, frameworkId, SchedulerCalls.decline(frameworkId, declines), getUrl());
                     }
-                    long end = System.currentTimeMillis();
-                    log.debug("accept --> used time : " + (end - start) + " ms");
                 } finally {
                     declines.clear();
                     attrMap.clear();

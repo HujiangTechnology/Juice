@@ -5,7 +5,7 @@
     <parent>
         <artifactId>juice</artifactId>
         <groupId>com.hujiang</groupId>
-        <version>1.0-OPEN</version>
+        <version>1.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -46,9 +46,9 @@
                         <configuration>
                             <jdbc>
                                 <driver>com.mysql.jdbc.Driver</driver>
-                                <url>jdbc:mysql://your ip:your port/juice</url> <!-- ip & port & database name -->
-                                <user>your username</user> <!-- username of database -->
-                                <password>your password</password> <!-- password of database -->
+                                <url></url> <!-- ip & port & database name -->
+                                <user></user> <!-- username of database -->
+                                <password></password> <!-- password of database -->
                             </jdbc>
                             <generator>
                                 <database>

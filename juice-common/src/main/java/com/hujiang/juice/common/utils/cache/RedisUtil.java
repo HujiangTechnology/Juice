@@ -242,6 +242,27 @@ public class RedisUtil {
         }
     }
 
+    public Long rPush(String listName, String value) {
+        Jedis jedis = null;
+
+        Long e;
+        try {
+            jedis = this.pool.getResource();
+            if(jedis == null) {
+                throw new CacheException(CommonStatusCode.REDIS_CONNECTION_RESOURCE_NOT_NULL);
+            }
+
+            e = jedis.rpush(listName, new String[]{value});
+        } catch (Exception var8) {
+            log.error("redis lPush error, ListName : " + listName + " value : " + value);
+            throw this.throwCacheException(var8);
+        } finally {
+            returnResource(jedis);
+        }
+
+        return e;
+    }
+
     /**
      * <p>队列右弹出一个元素</p>
      * @param  listName 队列名

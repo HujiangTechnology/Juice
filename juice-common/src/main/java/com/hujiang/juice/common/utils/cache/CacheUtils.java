@@ -12,4 +12,6 @@ public interface CacheUtils {
     boolean setExpired(String key, String value, int expired);
     boolean existsKey(String key);
     long delete(String key);
+
+    long rpushToQueue(@NotNull String queue, @NotNull String value);
 }

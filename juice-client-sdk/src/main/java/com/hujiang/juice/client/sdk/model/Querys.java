@@ -56,7 +56,7 @@ public class Querys extends Operations{
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<JuiceTask> handle(String requestUrl, String tenantId) {
+    public List<JuiceTask> handle(String requestUrl) {
 
         Map<String, String> map = getTaskIdsStr(taskIdList);
 
@@ -64,7 +64,6 @@ public class Querys extends Operations{
         try {
             result = Restty.create(requestUrl, map)
                     .addMediaType(Restty.jsonBody())
-                    .addHeader(TENANT_ID_HEAD, tenantId)
                     .get(new ParameterTypeReference<Result<List<JuiceTask>>>() {
                     });
 

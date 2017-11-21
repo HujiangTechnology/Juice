@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.mesos.v1.Protos;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by xujia on 16/12/2.
@@ -16,43 +16,18 @@ import java.util.List;
 @Slf4j
 public class Command {
 
-    private Environment env;
+    private List<Environment> envs;
     private List<String> args;
+    private List<String> uris;
     private String value;
 
-    public Command() {
-        args = new ArrayList<>();
-    }
-
-    public Command(String value) {
+    public Command(String value, List<Environment> envs, List<String> args, List<String> uris) {
         this.value = value;
-    }
-
-    public Command(String value, Environment env, List<String> args) {
-        this.value = value;
-        this.env = env;
+        this.envs = envs;
         this.args = args;
+        this.uris = uris;
     }
 
-    public Command(Environment env) {
-        this.env = env;
-        args = new ArrayList<>();
-    }
-
-    public Command(Environment env, List<String> args) {
-        this.env = env;
-        this.args = args;
-    }
-
-    public void setEnv(Protos.CommandInfo.Builder builder) {
-        if (null != env) {
-            builder.setEnvironment(Protos.Environment.newBuilder()
-                    .addVariables(Protos.Environment.Variable.newBuilder()
-                            .setName(env.getName())
-                            .setValue(env.getValue()))
-                    .build());
-        }
-    }
     public @NotNull Protos.CommandInfo protos(boolean isShell) {
 
         Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder();
@@ -65,14 +40,17 @@ public class Command {
             }
         }
 
-        setEnv(builder);
+        if(null != uris && !uris.isEmpty()) {
+            builder.addAllUris(uris.stream().map(uri -> Protos.CommandInfo.URI.newBuilder().setValue(uri).build()).collect(Collectors.toList()));
+        }
+
+        if(null != envs && !envs.isEmpty()) {
+            Protos.Environment.Builder envBuilder = Protos.Environment.newBuilder();
+            envBuilder.addAllVariables(envs.stream().map(env -> Protos.Environment.Variable.newBuilder().setName(env.getName()).setValue(env.getValue()).build()).collect(Collectors.toList()));
+            builder.setEnvironment(envBuilder).build();
+        }
 
         return builder.build();
-    }
-
-
-    public static Environment newEnvironment(String name, String value) {
-        return new Environment(name, value);
     }
 
     @Data

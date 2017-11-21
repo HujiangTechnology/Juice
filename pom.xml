@@ -7,7 +7,7 @@
     <groupId>com.hujiang</groupId>
     <artifactId>juice</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-OPEN</version>
+    <version>1.1.0</version>
 
     <modules>
         <module>juice-service</module>
@@ -46,7 +46,7 @@
         <logback.version>1.1.7</logback.version>
         <lombok.version>1.16.10</lombok.version>
         <mysql.version>5.1.39</mysql.version>
-        <juice.version>1.0-OPEN</juice.version>
+        <juice.version>1.1.0</juice.version>
         <druid.version>1.0.20</druid.version>
         <curator.version>2.12.0</curator.version>
         <okhttp.version>3.3.1</okhttp.version>

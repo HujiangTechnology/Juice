@@ -5,6 +5,7 @@ import com.hujiang.jooq.juice.tables.pojos.JuiceTask;
 import com.hujiang.juice.common.exception.CacheException;
 import com.hujiang.juice.common.exception.DataBaseException;
 import com.hujiang.juice.common.model.*;
+import com.hujiang.juice.common.utils.rest.ParameterTypeReference;
 import com.hujiang.juice.common.vo.TaskResult;
 import com.hujiang.juice.service.driver.SchedulerDriver;
 import com.hujiang.juice.service.exception.DriverException;
@@ -38,6 +39,8 @@ import static org.apache.mesos.v1.Protos.*;
 @Slf4j
 public class AuxiliaryService {
 
+    private static final String SANDBOX = "/mnt/mesos/sandbox";
+
     private static final ExecutorService fixedSendPool = Executors.newFixedThreadPool(OFFER_SEND_POOL);
     private static final ExecutorService fixedAuxiliaryPool = Executors.newFixedThreadPool(AUXILIARY_POOL);
     private static final LinkedBlockingDeque<SendErrors> sendErrors = new LinkedBlockingDeque<>(100000);
@@ -60,26 +63,68 @@ public class AuxiliaryService {
         fixedAuxiliaryPool.submit(() -> scheduledFramework(schedulerDriver));
 
 
-        //one thread to handle un-handle-task-list
+        //one thread to take care of un-handle-task-list
         fixedAuxiliaryPool.submit(AuxiliaryService::handleTaskErrors);
 
-        //one thread to handle offer-task send errors
+        //one thread to take care of offer-task send errors
         fixedAuxiliaryPool.submit(() -> handleSendErrors(schedulerDriver));
     }
 
-    public static void updateTask(@NotNull Map<Long, String> killMap, long taskId, String agentId, boolean isToKilled) {
+    public static void updateTask(@NotNull Map<Long, String> killMap, long taskId, String agentId, boolean isToKilled, Address address) {
         fixedAuxiliaryPool.submit(() -> {
             try {
+                String ipWithPort = "";
+                if (null != address && StringUtils.isNotBlank(address.getIp()) && address.getPort() > 0) {
+
+                    if (!address.getIp().startsWith("http")) {
+                        ipWithPort = "http://";
+                    }
+                    ipWithPort += address.getIp() + ":" + address.getPort();
+                }
                 if (!isToKilled) {
-                    daoUtils.updateTask(taskId, agentId);
+                    daoUtils.updateTaskWithIP(taskId, agentId, ipWithPort);
                 } else {
-                    daoUtils.finishTask(taskId, TaskResult.Result.KILLED.getType(), "task not run due to killed");
+                    daoUtils.finishTaskWithIP(taskId, TaskResult.Result.KILLED.getType(), "task not run due to killed", ipWithPort);
                     killMap.remove(taskId);
                 }
             } catch (DataBaseException e) {
                 log.error("database operation error, update task agent rel in db failed, it will influence kill task model, taskId : " + taskId + ", agentId :" + agentId);
             }
         });
+    }
+
+    public static void update(TaskResult.Result result, String data, long taskId, String message) {
+        if (null != result) {
+            fixedAuxiliaryPool.submit(() -> {
+                TaskResult taskResult = new TaskResult(taskId, result, message);
+
+                try {
+                    if (result == TaskResult.Result.RUNNING && StringUtils.isNotBlank(data)) {
+                        List<TaskResult.Mounts> mounts = gson.fromJson(data, new ParameterTypeReference<List<TaskResult.Mounts>>() {
+                        }.getType());
+                        if (null != mounts) {
+                            List<TaskResult.Mount> mount = mounts.get(0).getMounts();
+                            if (null != mount) {
+                                mount.stream().filter(m -> m.getDestination().equals(SANDBOX) && StringUtils.isNotBlank(m.getSource())).findFirst().ifPresent(m -> {
+                                    taskResult.setSource(m.getSource());
+                                });
+                            }
+                        }
+                    }
+
+                    cacheUtils.pushToQueue(TASK_RESULT_QUEUE, gson.toJson(taskResult));
+                    log.debug("update --> task result, taskResult [taskId : "
+                            + taskResult.getTaskId()
+                            + " status : "
+                            + taskResult.getResult().name()
+                            + " ]");
+                } catch (CacheException e) {
+                    AuxiliaryService.getTaskErrors().push(taskResult);
+                    log.error("cache not available, push task result error, { taskId : " + taskId + " }");
+                }
+            });
+        }
+
     }
 
     public static void acceptOffer(final @NotNull Protocol protocol, final @NotNull String streamId, final @NotNull OfferID offerID,
@@ -162,7 +207,7 @@ public class AuxiliaryService {
                         }
                     }
                     if (StringUtils.isNotBlank(value)) {
-                        TaskManagement.TaskAgentRel taskAgentRel = new TaskManagement.TaskAgentRel(taskId, juiceTask.getTaskName(), value);
+                        TaskManagement.TaskAgentRel taskAgentRel = new TaskManagement.TaskAgentRel(taskId, juiceTask.getTaskName(), juiceTask.getRetry(), value);
                         Protos.Call call = SchedulerCalls.kill(frameworkID, taskAgentRel);
                         try {
                             SendUtils.sendCall(call, protocol, streamId, url);
@@ -176,7 +221,8 @@ public class AuxiliaryService {
         }
     }
 
-    private static void handle(String message, SchedulerDriver schedulerDriver) throws IOException {
+    private static void
+    handle(String message, SchedulerDriver schedulerDriver) throws IOException {
         TaskManagement taskManagement = gson.fromJson(message, TaskManagement.class);
         Protos.Call call = null;
         if (null != taskManagement) {
@@ -233,10 +279,11 @@ public class AuxiliaryService {
         log.warn("object taskManagement is null");
         throw new DriverException("object taskManagement is null");
     }
+
     private static void returnManagement(SchedulerDriver schedulerDriver, TaskManagement taskManagement, JuiceTask juiceTask) {
 
         //  to reach TASK_RETRY_EXPIRE_TIME in seconds
-        if(taskManagement.getRetries() + TASK_RETRY_EXPIRE_TIME > currentTimeSeconds()) {
+        if (taskManagement.getRetries() + TASK_RETRY_EXPIRE_TIME > currentTimeSeconds()) {
             if (!schedulerDriver.getKillMap().containsKey(juiceTask.getTaskId())) {
                 schedulerDriver.getKillMap().put(juiceTask.getTaskId(), "");
             }
@@ -268,7 +315,7 @@ public class AuxiliaryService {
                     } catch (CacheException e) {
                         log.error("redis cache is not available, write error to database");
                         try {
-                            daoUtils.finishTask(taskResult.getTaskId(), taskResult.getResult().getType(), taskResult.getMessage());
+                            daoUtils.finishTaskWithSource(taskResult.getTaskId(), taskResult.getResult().getType(), taskResult.getMessage(), "");
                         } catch (DataBaseException e1) {
                             getTaskErrors().push(taskResult);
                             log.error("redis cache and db all error, write after 30's!");

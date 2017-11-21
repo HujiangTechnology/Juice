@@ -6,5 +6,4 @@ package com.hujiang.juice.client.sdk.config;
 public class COMMON {
     public static final String URL_KILL = "/kill";
     public static final String URL_RECONCILE = "/reconcile";
-    public static final String TENANT_ID_HEAD = "X-Tenant-Id";
 }

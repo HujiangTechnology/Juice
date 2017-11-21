@@ -22,7 +22,7 @@ public class RedisCacheUtils implements CacheUtils{
 
     public long pushToQueue(@NotNull String queue, @NotNull String value){
         try {
-            return push(queue, value);
+            return lpush(queue, value);
         } catch (CacheException e) {
             String error = "cache operation error, push to " + queue + " failed, Task :" + value;
             log.error(error);
@@ -32,7 +32,7 @@ public class RedisCacheUtils implements CacheUtils{
 
     public String popFromQueue(@NotNull String queue){
         try {
-            return pop(queue);
+            return lpop(queue);
         } catch (CacheException e) {
             String error = "cache operation error, pop from " + queue + " failed";
             log.error(error);
@@ -80,6 +80,16 @@ public class RedisCacheUtils implements CacheUtils{
         }
     }
 
+    public long rpushToQueue(@NotNull String queue, @NotNull String value) {
+        try {
+            return rPush(queue, value);
+        } catch (CacheException e) {
+            String error = "cache operation error, push to " + queue + " failed, Task :" + value;
+            log.error(error);
+            throw e;
+        }
+    }
+
     private boolean setex(String key, String value, int expireds) {
         return redisUtil.setex(key, value, expireds);
     }
@@ -92,14 +102,16 @@ public class RedisCacheUtils implements CacheUtils{
         return redisUtil.del(key);
     }
 
-    private Long push(String lname, String value) {
+    private Long lpush(String lname, String value) {
         return redisUtil.lPush(lname, value);
     }
-
-    private String pop(String lname) {
-        return redisUtil.rPop(lname);
+    private Long rPush(String lname, String value) {
+        return redisUtil.rPush(lname, value);
     }
 
+    private String lpop(String lname) {
+        return redisUtil.rPop(lname);
+    }
     private long length(String lname) {
         return redisUtil.llen(lname);
     }

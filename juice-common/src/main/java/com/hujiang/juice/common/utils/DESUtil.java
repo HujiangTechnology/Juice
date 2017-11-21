@@ -91,13 +91,4 @@ public class DESUtil {
     public static String decrypt(String cryptData){
         return decrypt(cryptData, desKey);
     }
-
-
-    public static void main(String[] args){
-        String encryptString= encrypt("9$r05YT*6G", desKey);
-        System.out.println(encryptString);
-
-        String desencryptString = decrypt(encryptString, desKey);
-        System.out.println(desencryptString);
-    }
 }

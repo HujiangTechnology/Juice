@@ -50,7 +50,7 @@ public class Kills extends Operations {
 
     @Override
     @SuppressWarnings("unchecked")
-    public TaskKill handle(String requestUrl, String tenantId) {
+    public TaskKill handle(String requestUrl) {
         Result<TaskKill> result = null;
         try {
             Map<String, String> map = Maps.newHashMap();
@@ -58,7 +58,6 @@ public class Kills extends Operations {
             String url = requestUrl + URL_KILL;
             result = Restty.create(url, map)
                     .addMediaType(Restty.jsonBody())
-                    .addHeader(TENANT_ID_HEAD, tenantId)
                     .post(new ParameterTypeReference<Result<TaskKill>>() {
                     });
         } catch (IOException e) {

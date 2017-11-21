@@ -39,7 +39,7 @@ public class TaskController extends BaseAppController {
     private Gson gson = new Gson();
 
     @RequestMapping(method = RequestMethod.POST)
-    public Result<Map<String, Long>> post(@RequestHeader(value = "X-Tenant-Id") String tenantId, @RequestBody String requestBody) throws Exception {
+    public Result<Map<String, Long>> post(@RequestBody String requestBody) throws Exception {
         if(StringUtils.isBlank(requestBody)) {
             throw new RestException(OBJECT_NOT_NULL_ERROR.getCode(), "requestBody is not null");
         }
@@ -50,37 +50,37 @@ public class TaskController extends BaseAppController {
         } catch (Exception e) {
             throw new RestException(OBJECT_INIT_ERROR.getCode(), e.getMessage());
         }
-        long taskId = restService.submits(object, tenantId);
+        long taskId = restService.submits(object);
         Map<String, Long> map = Maps.newHashMap();
         map.put("taskId", taskId);
         return buildResult(map);
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public Result<List<JuiceTask>> get(@RequestHeader(value = "X-Tenant-Id") String tenantId, @RequestParam(value = "taskIds") String taskIds) throws Exception {
+    public Result<List<JuiceTask>> get(@RequestParam(value = "taskIds") String taskIds) throws Exception {
         if(StringUtils.isBlank(taskIds)) {
             throw new RestException(OBJECT_NOT_NULL_ERROR.getCode(), "taskIds is not null");
         }
-        List<JuiceTask> tasks = restService.querys(tenantId, split(taskIds, ","));
+        List<JuiceTask> tasks = restService.queries(split(taskIds, ","));
         log.info("tasks : " + tasks.size());
         return buildResult(tasks);
     }
 
     @RequestMapping(value = "/kill", method = RequestMethod.POST)
-    public Result<TaskKill> kill(@RequestHeader(value = "X-Tenant-Id") String tenantId, @RequestParam(value = "taskId") Long taskId) throws Exception {
+    public Result<TaskKill> kill(@RequestParam(value = "taskId") Long taskId) throws Exception {
         if(null == taskId) {
             throw new RestException(OBJECT_NOT_NULL_ERROR.getCode(), "taskId is not null");
         }
         log.info("request taskId --> " + taskId);
-        return buildResult(restService.kills(tenantId, taskId));
+        return buildResult(restService.kills(taskId));
     }
 
     @RequestMapping(value = "/reconcile", method = RequestMethod.POST)
-    public Result<TaskReconcile> reconcile(@RequestHeader(value = "X-Tenant-Id") String tenantId, @RequestParam(value = "taskIds") String taskIds) throws Exception {
+    public Result<TaskReconcile> reconcile(@RequestParam(value = "taskIds") String taskIds) throws Exception {
         if(StringUtils.isBlank(taskIds)) {
             throw new RestException(OBJECT_NOT_NULL_ERROR.getCode(), "taskIds is not null");
         }
-        return buildResult(restService.reconciles(tenantId, split(taskIds, ",")));
+        return buildResult(restService.reconciles(split(taskIds, ",")));
     }
 
     private List<Long> split(String str, String splitter) {

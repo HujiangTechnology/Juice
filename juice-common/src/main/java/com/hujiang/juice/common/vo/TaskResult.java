@@ -3,6 +3,7 @@ package com.hujiang.juice.common.vo;
 import lombok.Data;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -14,6 +15,8 @@ public class TaskResult {
     private long taskId;
     private Result result;
     private String message;
+    private String source;
+    private List<String> logs;
 
     public TaskResult(long taskId, Result result, String message) {
         this.taskId = taskId;
@@ -22,6 +25,7 @@ public class TaskResult {
     }
 
     public enum Result {
+        RETRY(Byte.valueOf("-2")),
         NOT_START(Byte.valueOf("-1")),
         STAGING(Byte.valueOf("0")),
         RUNNING(Byte.valueOf("1")),
@@ -48,11 +52,20 @@ public class TaskResult {
         }
 
         public static String getName(byte b) {
-            Optional<Result> result = Arrays.stream(Result.values()).filter(v -> v.getType() == b).findFirst();
-            if(result.isPresent()) {
-                return result.get().name();
-            }
-            return null;
+            return Arrays.stream(Result.values()).filter(v -> v.getType() == b).findFirst().map(Enum::name).orElse(null);
         }
+    }
+
+
+    @Data
+    public class Mounts {
+        List<Mount> Mounts;
+    }
+
+    @Data
+    public class Mount {
+        private String Destination;
+        private String Type;
+        private String Source;
     }
 }

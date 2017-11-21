@@ -26,6 +26,7 @@ public class CachesBizConfig {
         this.expiredSeconds = expiredSeconds;
 
         log.info("taskQueue : " + taskQueue);
+        log.info("taskRetryQueue : " + taskRetryQueue);
         log.info("resultQueue : " + resultQueue);
         log.info("managementQueue : " + managementQueue);
         log.info("expiredOfSeconds : " + expiredSeconds);

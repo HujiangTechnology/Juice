@@ -22,19 +22,12 @@ public class Task {
     private Constraints constraints;
 
     private String taskName;
-    private long taskId;
+    private Long taskId;
     private Expire expire;
+    private Integer priority;
+    private Integer retry;
 
-    public Task(Resources resources, Container container, Command command, Constraints constraints, String taskName) {
-        this.resources = resources;
-        this.container = container;
-        this.command = command;
-        this.taskName = taskName;
-        this.constraints = constraints;
-        this.expire = new Expire();
-    }
-
-    public Task(Resources resources, Container container, Command command, Constraints constraints, String taskName, long taskId) {
+    public Task(Resources resources, Container container, Command command, Constraints constraints, @NotNull String taskName, @NotNull Long taskId, Integer priority, Integer retry) {
         this.resources = resources;
         this.container = container;
         this.command = command;
@@ -42,6 +35,8 @@ public class Task {
         this.taskId = taskId;
         this.constraints = constraints;
         this.expire = new Expire();
+        this.priority = (null == priority || priority <= 0) ? 0 : 1;
+        this.retry = (null == retry || retry <= 0) ? 0 : 1;
     }
 
     public @NotNull static long splitTaskNameId(String value) {
@@ -52,16 +47,16 @@ public class Task {
         }
 
         String[] parts = value.split("-");
-        if(parts.length != 2) {
+        if(parts.length < 2) {
             log.warn("value length not reach min parts!");
             throw new CommonException(ErrorCode.VALUE_LENGTH_NOT_EQUAL.getCode(), "value length not reach min parts!");
         }
         return Long.parseLong(parts[1]);
     }
 
-    public @NotNull static String generateTaskNameId(String name, long id) {
+    public @NotNull static String generateTaskNameId(String name, long id, int retries) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(name.replaceAll("-", "_")).append("-").append(id).toString();
+        return sb.append(name.replaceAll("-", "_")).append("-").append(id).append("-").append(retries).toString();
     }
 
     public @NotNull
@@ -70,7 +65,7 @@ public class Task {
     ) {
         Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder();
         taskInfoBuilder.setName(taskName);
-        taskInfoBuilder.setTaskId(Protos.TaskID.newBuilder().setValue(generateTaskNameId(taskName, taskId)));
+        taskInfoBuilder.setTaskId(Protos.TaskID.newBuilder().setValue(generateTaskNameId(taskName, taskId, retry)));
         taskInfoBuilder.setAgentId(agentID);
         taskInfoBuilder.addAllResources(resources.protos());
 

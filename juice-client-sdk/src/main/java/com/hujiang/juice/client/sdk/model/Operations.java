@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class Operations {
 
-    public abstract <T> T handle(String requestUrl, String tenantId);
+    public abstract <T> T handle(String requestUrl);
 
     private static String idsToString(List<Long> ids) {
         return ids.stream()

@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import static com.hujiang.juice.client.sdk.config.COMMON.*;
+import static com.hujiang.juice.common.config.COMMON.PRIORITY;
 
 /**
  * Created by xujia on 17/2/13.
@@ -91,8 +91,16 @@ public class Submits extends Operations{
         return this;
     }
 
+    public Submits setHighPriority() {
+        submitTask.setPriority(PRIORITY);
+        return this;
+    }
+
     public Submits addEnv(String k, String v) {
-        submitTask.setEnv(new Command.Environment(k, v));
+        if(submitTask.getEnvs() == null) {
+            submitTask.setEnvs(Lists.newArrayList());
+        }
+        submitTask.getEnvs().add(new Command.Environment(k, v));
         return this;
     }
 
@@ -143,12 +151,11 @@ public class Submits extends Operations{
 
     @Override
     @SuppressWarnings("unchecked")
-    public Long handle(String requestUrl, String tenantId) {
+    public Long handle(String requestUrl) {
         Result<Response> result = null;
         try {
             result = Restty.create(requestUrl)
                     .addMediaType(Restty.jsonBody())
-                    .addHeader(TENANT_ID_HEAD, tenantId)
                     .requestBody(submitTask)
                     .post(new ParameterTypeReference<Result<Response>>() {
                     });

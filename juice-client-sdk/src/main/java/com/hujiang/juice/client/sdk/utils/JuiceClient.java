@@ -44,6 +44,6 @@ public class JuiceClient {
     }
 
     public <T> T handle() {
-        return this.operations.handle(requestUrl, accessToken);
+        return this.operations.handle(requestUrl);
     }
 }

@@ -28,7 +28,10 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hujiang.juice.common.config.COMMON.KILL;
+import static com.hujiang.juice.common.config.COMMON.PRIORITY;
 import static com.hujiang.juice.common.config.COMMON.RECONCILE;
+
+
 
 /**
  * Created by xujia on 16/12/5.
@@ -52,7 +55,7 @@ public class RestService {
 
     private static final String POINT = ".";
 
-    public long submits(SubmitTask object, String tenantId) {
+    public long submits(SubmitTask object) {
 
         //  set run mode
         object.setRunMode(TaskUtils.checkRunMode(object));
@@ -60,20 +63,17 @@ public class RestService {
         //  generate taskId
         object.setTaskId(IdGenerator.nextId());
         log.info("TaskId --> " + object.getTaskId() + ", TaskName : " + object.getTaskName());
-
+        String taskInfo = gson.toJson(object.toTask());
         //  submit(record in db and submit in redis)
         daoUtils.getContext().transaction(
                 configuration -> {
-                    String commands = "";
-                    String dockerImage = "";
-                    if (object.getRunMode() == SubmitTask.RunModel.CONTAINER) {
-                        dockerImage = object.getContainer().getDocker().getImage();
-                    } else {
-                        commands = object.getCommands();
-                    }
-                    boolean isInsert = daoUtils.submit(configuration, object.getTaskId(), tenantId, object.getCallbackUrl(), object.getTaskName(), dockerImage, commands);
+                    boolean isInsert = daoUtils.submit(configuration, object.getTaskId(), object.getCallbackUrl(), object.getTaskName(), taskInfo, object.getRetry());
                     if (isInsert) {
-                        cacheUtils.pushToQueue(cachesBizConfig.getTaskQueue(), gson.toJson(object.toTask()));
+                        if(null != object.getPriority() && object.getPriority() == PRIORITY) {
+                            cacheUtils.rpushToQueue(cachesBizConfig.getTaskRetryQueue(), taskInfo);
+                        } else {
+                            cacheUtils.pushToQueue(cachesBizConfig.getTaskQueue(), taskInfo);
+                        }
                     }
                 }
         );
@@ -81,8 +81,8 @@ public class RestService {
         return object.getTaskId();
     }
 
-    public TaskKill kills(String tenantId, long taskId) {
-        JuiceTask task = daoUtils.queryTask(tenantId, taskId);
+    public TaskKill kills(long taskId) {
+        JuiceTask task = daoUtils.queryTask(taskId);
 
         if (null == task) {
             throw new RestException(CommonStatusCode.QUERY_RECORD_EMPTY.getStatus(), "task not exist to kill!");
@@ -93,22 +93,22 @@ public class RestService {
         }
 
         TaskManagement taskManagement = new TaskManagement(Lists.newCopyOnWriteArrayList(), KILL);
-        TaskManagement.TaskAgentRel taskAgentRel = new TaskManagement.TaskAgentRel(task.getTaskId(), task.getTaskName(), task.getAgentId());
+        log.info("task id-> " + task.getTaskId() + "task name-> " +  task.getTaskName() + "retry-> " + task.getRetry() + "agent id-> " + task.getAgentId());
+        TaskManagement.TaskAgentRel taskAgentRel = new TaskManagement.TaskAgentRel(task.getTaskId(), task.getTaskName(), task.getRetry(), task.getAgentId());
         taskManagement.getTaskAgentRels().add(taskAgentRel);
-//
-//        String key = cachesBizConfig.getKillKeyPrefix() + POINT + taskId;
-//        cacheUtils.setExpired(key, "1", cachesBizConfig.getExpiredSeconds());
+        log.info("push q start");
         cacheUtils.pushToQueue(cachesBizConfig.getManagementQueue(), gson.toJson(taskManagement));
+        log.info("push q fin");
         return new TaskKill(true, task.getTaskStatus(), "juice accept kill task command");
 
     }
 
-    public List<JuiceTask> querys(String tenantId, List<Long> taskId) {
-        return daoUtils.queryTasks(tenantId, taskId);
+    public List<JuiceTask> queries(List<Long> taskId) {
+        return daoUtils.queryTasks(taskId);
     }
 
-    public TaskReconcile reconciles(String tenantId, List<Long> taskIds) {
-        List<JuiceTask> tasks = daoUtils.queryTasks(tenantId, taskIds);
+    public TaskReconcile reconciles(List<Long> taskIds) {
+        List<JuiceTask> tasks = daoUtils.queryTasks(taskIds);
         Map<Long, TaskReconcile.Reconcile> reconcileMap = getTaskReconcile(taskIds);
         TaskManagement taskManagement = new TaskManagement(Lists.newCopyOnWriteArrayList(), RECONCILE);
         tasks.stream().parallel().forEach(t -> {
@@ -125,10 +125,10 @@ public class RestService {
                 message = "not reconcile due to terminal task status : " + TaskResult.Result.getName(t.getTaskStatus());
             } else if (StringUtils.isBlank(value)) {
                 reconcile.setReconciled(false);
-                daoUtils.finishTask(t.getTaskId(), TaskResult.Result.EXPIRED.getType(), "task expired");
+                daoUtils.finishTaskWithSource(t.getTaskId(), TaskResult.Result.EXPIRED.getType(), "task expired", "");
                 message = "not reconcile due to terminal task status : " + TaskResult.Result.EXPIRED.name();
             } else {
-                TaskManagement.TaskAgentRel taskAgentRel = new TaskManagement.TaskAgentRel(t.getTaskId(), t.getTaskName(), value);
+                TaskManagement.TaskAgentRel taskAgentRel = new TaskManagement.TaskAgentRel(t.getTaskId(), t.getTaskName(), t.getRetry(), value);
                 taskManagement.getTaskAgentRels().add(taskAgentRel);
                 isReconciled = true;
                 message = "reconcile task";
@@ -137,7 +137,6 @@ public class RestService {
             reconcile.setTaskId(t.getTaskId());
             reconcile.setReconciled(isReconciled);
             reconcile.setMessage(message);
-
         });
         int reconcileCount = taskManagement.getTaskAgentRels().size();
         if (reconcileCount > 0) {

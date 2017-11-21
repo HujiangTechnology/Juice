@@ -38,6 +38,9 @@ public class AppConfig {
     @Value("${juice.task.queue:juice.task.queue.}")
     private String taskQueue;
 
+    @Value("${juice.task.retry.queue:juice.task.retry.queue.}")
+    private String taskRetryQueue;
+
     @Value("${juice.task.result.queue:juice.task.result.queue.}")
     private String taskResultQueue;
 
@@ -71,6 +74,6 @@ public class AppConfig {
     @Bean
     public CachesBizConfig getCachesBizConfig() {
         log.info("profileActive : " + profileActive);
-        return new CachesBizConfig(taskQueue + profileActive, null, taskResultQueue + profileActive, managementQueue + profileActive,  expiredSeconds);
+        return new CachesBizConfig(taskQueue + profileActive, taskRetryQueue + profileActive, taskResultQueue + profileActive, managementQueue + profileActive,  expiredSeconds);
     }
 }

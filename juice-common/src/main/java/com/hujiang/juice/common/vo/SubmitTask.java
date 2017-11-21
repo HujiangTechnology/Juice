@@ -17,46 +17,29 @@ public class SubmitTask {
 
     private Resources resources;
     private Container container;
-    private Command.Environment env;
-    private List<String> args;
+
     private String commands;
+    private List<String> args;
+    private List<String> uris;
+    private List<Command.Environment> envs;
 
     private Constraints constraints;
     private String taskName;
     private RunModel runMode;
     private String callbackUrl;
     private Long taskId;
+    private Integer priority;
+    private Integer retry;
 
     public SubmitTask() {
 
     }
 
-    public SubmitTask(String taskName, String callbackUrl, Command.Environment env, List<String> args, Constraints constraints, Resources resources, Container container) {
-        this.taskName = taskName;
-        this.callbackUrl = callbackUrl;
-        this.env = env;
-        this.args = args;
-        this.resources = resources;
-        this.container = container;
-        this.constraints = constraints;
-    }
-
-    public SubmitTask(String taskName, String callbackUrl, Command.Environment env, List<String> args, Resources resources, Constraints constraints, String commands) {
-        this.taskName = taskName;
-        this.callbackUrl = callbackUrl;
-        this.env = env;
-        this.args = args;
-        this.args = args;
-        this.resources = resources;
-        this.commands = commands;
-        this.constraints = constraints;
-    }
-
     public Task toTask() {
         if (runMode == RunModel.COMMAND) {
-            return new Task(resources, container, new Command(commands, env, null), constraints, taskName, taskId);
+            return new Task(resources, container, new Command(commands, envs, null, uris), constraints, taskName, taskId, priority, retry);
         } else {
-            return new Task(resources, container, new Command(null, env, args), constraints, taskName, taskId);
+            return new Task(resources, container, new Command(null, envs, args, uris), constraints, taskName, taskId, priority, retry);
         }
     }
 
